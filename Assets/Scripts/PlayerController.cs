@@ -1,7 +1,5 @@
-﻿using System;
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.InputSystem;
-using UnityEngine.Serialization;
 
 
 namespace Movement
@@ -22,15 +20,14 @@ namespace Movement
         private Vector3 _inputDirection = Vector3.zero;
 
 
-
         [Header( "Movement" )]
         public float moveSpeed = 10f;
         public float smoothTime = 0.1f;
 
+
         private float _currentVelocityX; // for ref
         private float _currentVelocityZ; // for ref
         private Vector3 _smoothInputMagnitude = Vector3.zero;
-        private Vector3 _playerCoordinatesToMove;
         [Space]
 
 
@@ -42,11 +39,13 @@ namespace Movement
         [Header( "Jumping" )]
         public float jumpGravity = -9.81f;
         public float jumpHeight = 2f;
-        public float moveSpeedWhileAirborn = 5f;
+        public float smoothTimeAirborn = 0.8f;
+        public float fallingStartVelocity = 0f;
+
 
         private bool isSpacePressed = false;
         private bool isGrounded;
-        private float fallingVelocity = 0f;
+        //private Vector3 _smoothInputMagnitudeWhileAirborn = Vector3.zero;
 
 
 
@@ -66,10 +65,9 @@ namespace Movement
         {
             isGrounded = IsGrounded();
 
-            PlayerMove();
+            PlayerMove( isGrounded );
             PlayerJump();
         }
-
 
 
 
@@ -81,6 +79,7 @@ namespace Movement
 
 
 
+
         public void OnMovement( InputValue value )
         {
             _inputDirection = new Vector3( value.Get<Vector2>().x , 0 , value.Get<Vector2>().y );
@@ -88,22 +87,54 @@ namespace Movement
 
 
 
-
-        private void PlayerMove()
+        private void PlayerMove( bool isGrounded )
         {
+            Vector3 velocity = _myRigidBody.velocity;
 
-            _smoothInputMagnitude = new Vector3(
-                Mathf.SmoothDamp( _smoothInputMagnitude.x , _inputDirection.x , ref _currentVelocityX , smoothTime ) ,
-                0f ,
-                Mathf.SmoothDamp( _smoothInputMagnitude.z , _inputDirection.z , ref _currentVelocityZ , smoothTime )
-            );
+            if( isGrounded )
+            {
+                _smoothInputMagnitude = new Vector3(
+                    Mathf.SmoothDamp( _smoothInputMagnitude.x , _inputDirection.x , ref _currentVelocityX , smoothTime ) ,
+                    0f ,//doesnt matter
+                    Mathf.SmoothDamp( _smoothInputMagnitude.z , _inputDirection.z , ref _currentVelocityZ , smoothTime )
+                );
 
 
+                _myRigidBody.velocity = moveSpeed * Time.fixedDeltaTime * _smoothInputMagnitude ;
+            }
+            else
+            {
+                _smoothInputMagnitude = new Vector3(
+                     Mathf.SmoothDamp( _smoothInputMagnitude.x , _inputDirection.x , ref _currentVelocityX , smoothTimeAirborn ) ,
+                     0f ,//doesnt matter
+                     Mathf.SmoothDamp( _smoothInputMagnitude.z , _inputDirection.z , ref _currentVelocityZ , smoothTimeAirborn )
+                );
 
-            if(!isGrounded)
-                _myRigidBody.MovePosition( transform.position + moveSpeedWhileAirborn * Time.deltaTime * _smoothInputMagnitude );
+                _myRigidBody.velocity = moveSpeed * Time.fixedDeltaTime * _smoothInputMagnitude + Vector3.up * velocity.y;
+            }
 
-            _myRigidBody.MovePosition( transform.position + moveSpeed * Time.deltaTime * _smoothInputMagnitude );
+
+            #region test
+            /*
+            _myRigidBody.velocity = new Vector3
+                (
+                Mathf.Clamp( _myRigidBody.velocity.x , -maxVelocity , maxVelocity ) ,
+                _myRigidBody.velocity.y ,
+                Mathf.Clamp( _myRigidBody.velocity.z , -maxVelocity , maxVelocity )
+                );
+
+
+            if( _inputDirection.magnitude > 0f )
+                _inputDirectionLastPressed = _inputDirection;
+
+            _myRigidBody.AddForce( new Vector3 (
+                Mathf.Clamp(moveSpeed * Time.deltaTime * _inputDirection.x ),
+                0f,
+                moveSpeed * Time.deltaTime * _inputDirection.z
+                );
+            */
+
+            #endregion
 
         }
 
@@ -111,9 +142,10 @@ namespace Movement
 
         public void OnJump( InputValue value )
         {
-            print( "on jump" );
             isSpacePressed = value.isPressed;
         }
+
+
 
 
         private void PlayerJump()
@@ -121,10 +153,10 @@ namespace Movement
             Vector3 velocity = _myRigidBody.velocity;
 
             if( isSpacePressed && isGrounded )
-                _myRigidBody.AddForce( Vector3.up *jumpHeight);
-                //_myRigidBody.velocity = Vector3.up * Mathf.Sqrt( -2 * jumpHeight * Physics.gravity.y ) * Time.deltaTime;
-            if( velocity.y < fallingVelocity )
-                _myRigidBody.velocity += Vector3.up * jumpGravity; 
+                _myRigidBody.AddForce( Vector3.up * jumpHeight );
+            //_myRigidBody.velocity = Vector3.up * Mathf.Sqrt( -2 * jumpHeight * Physics.gravity.y ) * Time.deltaTime;
+            if( velocity.y < fallingStartVelocity && !isSpacePressed )
+                _myRigidBody.velocity += Vector3.up * jumpGravity;
 
         }
 

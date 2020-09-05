@@ -13,15 +13,35 @@
         <e p="Plugins" t="Include">
           <e p="GitHub" t="Include">
             <e p="Editor" t="Include">
+              <e p="AsyncBridge.Net35.dll" t="Include" />
               <e p="credits.txt" t="Include" />
               <e p="eula.txt" t="Include" />
               <e p="ExtensionLoader.cs" t="Include" />
+              <e p="GitHub.Api.45.dll" t="Include" />
+              <e p="GitHub.Api.dll" t="Include" />
+              <e p="GitHub.Logging.dll" t="Include" />
+              <e p="GitHub.Unity.45.dll" t="Include" />
+              <e p="GitHub.Unity.dll" t="Include" />
+              <e p="GitHub.UnityShim.dll" t="Include" />
+              <e p="Mono.Posix.dll" t="Include" />
+              <e p="ReadOnlyCollectionsInterfaces.dll" t="Include" />
+              <e p="sfw.net.dll" t="Include" />
+              <e p="System.Threading.dll" t="Include" />
               <e p="UnityAPIWrapper.cs" t="Include" />
+              <e p="x64" t="Include">
+                <e p="pthreadVC2.dll" t="Include" />
+                <e p="sfw_x64.dll" t="Include" />
+              </e>
+              <e p="x86" t="Include">
+                <e p="pthreadVC2.dll" t="Include" />
+                <e p="sfw_x86.dll" t="Include" />
+              </e>
             </e>
           </e>
         </e>
         <e p="Scripts" t="Include">
-          <e p="PlayerControl.cs" t="Include" />
+          <e p="MouseLook.cs" t="Include" />
+          <e p="PlayerController.cs" t="Include" />
         </e>
       </e>
       <e p="HowDoIMakeGame.sln" t="IncludeFlat" />

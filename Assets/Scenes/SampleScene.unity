@@ -755,6 +755,7 @@ GameObject:
   - component: {fileID: 1844445328}
   - component: {fileID: 1844445327}
   - component: {fileID: 1844445331}
+  - component: {fileID: 1844445332}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -830,7 +831,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1844445326}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 2.46, y: 1.31, z: 3.37}
+  m_LocalPosition: {x: 2.8626666, y: 1, z: 3.0720687}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
   - {fileID: 654806913}
@@ -853,12 +854,28 @@ MonoBehaviour:
   layerMaskGround:
     serializedVersion: 2
     m_Bits: 256
-  moveSpeed: 10
+  moveSpeed: 500
   smoothTime: 0.1
+  maxVelocity: 10
+  stoppingSpeed: 10
   sphereCheckPosition: -0.51
-  jumpGravity: -0.01
-  jumpHeight: 250
-  moveSpeedWhileAirborn: 5
+  jumpGravity: -0.4
+  jumpHeight: 500
+  moveSpeedWhileAirborn: 3
+  smoothTimeAirborn: 0.8
+  fallingStartVelocity: 2
+--- !u!114 &1844445332
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1844445326}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7dfb2a57755691e40bcf67d2aa19bf5f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1949487809
 GameObject:
   m_ObjectHideFlags: 0
