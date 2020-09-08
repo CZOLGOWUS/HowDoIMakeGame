@@ -15,7 +15,7 @@ namespace Movement
         private CapsuleCollider _myCollider;
 
 
-
+        
         //input
         private Vector3 _inputDirection = Vector3.zero;
 
@@ -67,6 +67,7 @@ namespace Movement
 
             PlayerMove( isGrounded );
             PlayerJump();
+
         }
 
 
@@ -100,7 +101,7 @@ namespace Movement
                 );
 
 
-                _myRigidBody.velocity = moveSpeed * Time.fixedDeltaTime * _smoothInputMagnitude ;
+                _myRigidBody.velocity = ( moveSpeed * Time.fixedDeltaTime * _smoothInputMagnitude) ;
             }
             else
             {
