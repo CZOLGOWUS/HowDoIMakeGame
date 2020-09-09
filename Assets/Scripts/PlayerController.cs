@@ -22,7 +22,8 @@ namespace Movement
 
         [Header( "Movement" )]
         public float moveSpeed = 10f;
-        public float smoothTime = 0.1f;
+        public float smoothTimeGrounded = 0.1f;
+        public float maxMoveSpeed = 10f;
 
 
         private float _currentVelocityX; // for ref
@@ -65,7 +66,8 @@ namespace Movement
         {
             isGrounded = IsGrounded();
 
-            PlayerMove( isGrounded );
+
+            PlayerMove( isGrounded ,_myRigidBody.velocity);
             PlayerJump();
 
         }
@@ -88,33 +90,45 @@ namespace Movement
 
 
 
-        private void PlayerMove( bool isGrounded )
+        private void PlayerMove( bool isGrounded ,Vector3 velocity)
         {
-            Vector3 velocity = _myRigidBody.velocity;
+            float _smoothTime;
+
+
+
+            #region addForce Method
+            /*
+            if( Mathf.Abs(velocity.x) > maxMoveSpeed ) velocity.x = Mathf.Clamp(velocity.x,-maxMoveSpeed,maxMoveSpeed);
+            if(Mathf.Abs(velocity.z) > maxMoveSpeed ) velocity.z = Mathf.Clamp(velocity.z,-maxMoveSpeed,maxMoveSpeed);
+            _myRigidBody.velocity = velocity;
+
+            _myRigidBody.AddForce( transform.forward * _inputDirection.z * moveSpeed * Time.deltaTime );
+            _myRigidBody.AddForce( transform.right * _inputDirection.x * moveSpeed * Time.deltaTime );
+            */
+            #endregion
+
+            #region velocity change method
+
 
             if( isGrounded )
-            {
-                _smoothInputMagnitude = new Vector3(
-                    Mathf.SmoothDamp( _smoothInputMagnitude.x , _inputDirection.x , ref _currentVelocityX , smoothTime ) ,
-                    0f ,//doesnt matter
-                    Mathf.SmoothDamp( _smoothInputMagnitude.z , _inputDirection.z , ref _currentVelocityZ , smoothTime )
-                );
-
-
-                _myRigidBody.velocity = ( moveSpeed * Time.fixedDeltaTime * _smoothInputMagnitude) ;
-            }
+                _smoothTime = smoothTimeGrounded;
             else
-            {
+                _smoothTime = smoothTimeAirborn;
+                
+
                 _smoothInputMagnitude = new Vector3(
-                     Mathf.SmoothDamp( _smoothInputMagnitude.x , _inputDirection.x , ref _currentVelocityX , smoothTimeAirborn ) ,
-                     0f ,//doesnt matter
-                     Mathf.SmoothDamp( _smoothInputMagnitude.z , _inputDirection.z , ref _currentVelocityZ , smoothTimeAirborn )
+                    Mathf.SmoothDamp( _smoothInputMagnitude.x , _inputDirection.x , ref _currentVelocityX , _smoothTime ) ,
+                    0f ,//doesnt matter
+                    Mathf.SmoothDamp( _smoothInputMagnitude.z , _inputDirection.z , ref _currentVelocityZ , _smoothTime )
                 );
 
-                _myRigidBody.velocity = moveSpeed * Time.fixedDeltaTime * _smoothInputMagnitude + Vector3.up * velocity.y;
-            }
+                _myRigidBody.velocity = 
+                moveSpeed * Time.fixedDeltaTime * 
+                ( transform.forward  * _smoothInputMagnitude.z + transform.right* _smoothInputMagnitude.x) + 
+                Vector3.up * _myRigidBody.velocity.y;
 
 
+            #endregion
             #region test
             /*
             _myRigidBody.velocity = new Vector3

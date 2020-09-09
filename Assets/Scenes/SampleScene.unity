@@ -900,6 +900,7 @@ MonoBehaviour:
     m_Bits: 256
   moveSpeed: 500
   smoothTime: 0.1
+  maxMoveSpeed: 10
   sphereCheckPosition: -0.51
   jumpGravity: -0.4
   jumpHeight: 500
