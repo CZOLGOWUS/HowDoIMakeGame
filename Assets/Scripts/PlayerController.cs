@@ -9,6 +9,7 @@ namespace Movement
         //Components 
         [Header( "Layer Mask" )]
         public LayerMask layerMaskGround;
+        public Camera camera;
         [Space]
 
         private Rigidbody _myRigidBody;
@@ -41,7 +42,7 @@ namespace Movement
         public float jumpGravity = -9.81f;
         public float jumpHeight = 2f;
         public float smoothTimeAirborn = 0.8f;
-        public float fallingStartVelocity = 0f;
+        public float fallingStartVelocity;
         public float fowardJumpFroce = 5f;
 
         private bool isSpacePressed = false;
@@ -50,12 +51,16 @@ namespace Movement
 
         [Header( "Wall Running" )]
         public LayerMask wallMask;
-        public float scaleMultiplayer;
-        public float wallrunHight;
-        public float wallrunLenght;
+        //public float scaleMultiplayer;
+        //public float wallrunHight;
+        //public float wallrunLenght;
         public float wallRunSpeed;
+        public float wallRunStartAngle;
+        public float wallrunFallingAngleChange;
+        public int wallRunTimeToStartFalling;
 
 
+        private bool isWallRunJumpReady = true;
         private float _wallRunTime;
         private bool _isWallRunning = false;
         private RaycastHit _hitRight;
@@ -115,7 +120,7 @@ namespace Movement
             float _smoothTime;
 
 
-            #region addForce Method
+            #region commented addForce Method
             /*
             if( Mathf.Abs(velocity.x) > maxMoveSpeed ) velocity.x = Mathf.Clamp(velocity.x,-maxMoveSpeed,maxMoveSpeed);
             if(Mathf.Abs(velocity.z) > maxMoveSpeed ) velocity.z = Mathf.Clamp(velocity.z,-maxMoveSpeed,maxMoveSpeed);
@@ -204,23 +209,6 @@ namespace Movement
         }
 
 
-        private WallRunData CalculateWallRunData(Vector3 _directionOfWallRun)
-        {
-            
-            _WallRunAimPoint = new Vector3( _directionOfWallRun.x , _directionOfWallRun.y * wallrunHight , _directionOfWallRun.z ) * wallrunLenght;
-
-            float _displacementY = _WallRunAimPoint.y - transform.position.y;
-            Vector3 _displacementXZ = new Vector3( _WallRunAimPoint.x - transform.position.x , 0f , _WallRunAimPoint.z - transform.position.z );
-
-            float time = Mathf.Sqrt( -2 * wallrunHight / Physics.gravity.y ) + Mathf.Sqrt( 2 * (_displacementY - wallrunHight) / Physics.gravity.y );
-
-            Vector3 velocityY = Vector3.up * Mathf.Sqrt( -2 * Physics.gravity.y * wallrunHight );
-            Vector3 velocityXZ = _displacementXZ / time;
-
-            return new WallRunData( velocityXZ + velocityY * -Mathf.Sign( Physics.gravity.y ) , time );
-        }
-
-
 
         private void PlayerWallRun()
         {
@@ -231,26 +219,34 @@ namespace Movement
             {
                 _wallRunTime += Time.deltaTime;
 
-                if(_wallRunTime < 1.5f)
+                if( _wallRunTime < 2f )
                 {
-                    _myRigidBody.velocity = _directionOfWallRun * wallRunSpeed;
-                    _myRigidBody.velocity += Vector3.Cross( Vector3.up , _directionOfWallRun ).normalized * 2f;
-                }
+                    //rotate the direction of wall run vector Y angle and then multiplie the change in angle by _wallRunTime soo it will cahnge faster at the end
+                    _directionOfWallRun = new Vector3( _directionOfWallRun.x , _directionOfWallRun.y - Mathf.Pow( _wallRunTime , wallRunTimeToStartFalling ) * wallrunFallingAngleChange , _directionOfWallRun.z );
 
+                    _myRigidBody.velocity = _directionOfWallRun * wallRunSpeed;
+
+                    if( _hitRight.collider )
+                        _myRigidBody.velocity += Vector3.Cross( Vector3.up , _directionOfWallRun ).normalized * wallRunSpeed;
+                    else
+                        _myRigidBody.velocity += -Vector3.Cross( Vector3.up , _directionOfWallRun ).normalized * wallRunSpeed;
+
+
+                    if( isSpacePressed && isWallRunJumpReady )
+                    {
+                        isWallRunJumpReady = false;
+                        _myRigidBody.AddForce( new Vector3( camera.transform.forward.x , camera.transform.forward.y + 0.2f , camera.transform.forward.z ) * 999f );
+                    }
+
+                }
                 
-                //_myRigidBody.velocity = CalculateWallRunData(_directionOfWallRun).initialVelocity;
-                /*
-                _myRigidBody.velocity = new Vector3(
-                    _directionOfWallRun.x + _myRigidBody.velocity.x,
-                    _myRigidBody.velocity.y + wallrunAngle - Mathf.Pow(_wallRunTime,3/2),
-                    _directionOfWallRun.z + _myRigidBody.velocity.z );
-                */
 
             }
             else
             {
                 _wallRunTime = 0;
-                //_myRigidBody.velocity += Vector3.up * -9.81f;
+                isWallRunJumpReady = true;
+                _isWallRunning = false;
             }
             
         }
@@ -260,61 +256,54 @@ namespace Movement
 
         private bool IsNearRightWall()
         {
-
-            return Physics.Raycast( transform.position + Vector3.up * -0.25f , transform.right * transform.localScale.x , out _hitRight , transform.localScale.x , wallMask );
-
+            return Physics.Raycast( 
+                transform.position + Vector3.up * transform.localScale.y * -0.25f , 
+                transform.right * transform.localScale.x , 
+                out _hitRight , 
+                transform.localScale.x , 
+                wallMask );
         }
         private bool IsNearLeftWall()
         {
-            return Physics.Raycast( transform.position + Vector3.up * -0.25f , -transform.right * transform.localScale.x , out _hitLeft , transform.localScale.x , wallMask );
-
+            return Physics.Raycast( 
+                transform.position + Vector3.up * transform.localScale.y * -0.25f ,
+                -transform.right * transform.localScale.x , 
+                out _hitLeft , transform.localScale.x , 
+                wallMask );
         }
 
 
         private Vector3 GetTheDirectionOfWallRun()
         {
-            //if(!isGrounded && (IsNearRightWall() || IsNearLeftWall()) )
-            //{
-            //    _directionOfWallRun = _hitLeft.distance > _hitRight.distance ? Vector3.Cross( _hitRight.normal , Vector3.up ) : Vector3.Cross( _hitLeft.normal , Vector3.up );
-            //}
 
             Vector3 _directionOfWallRun = Vector3.zero;
+            
 
+            //jeśli isWAllruning = true  to działą w tle bez sensu!
             if( !isGrounded && IsNearLeftWall() )
             {
                 _isWallRunning = true;
-                _directionOfWallRun = Vector3.Cross( _hitLeft.normal , Vector3.up );
+                _directionOfWallRun = Vector3.Cross( _hitLeft.normal , Vector3.up ).normalized;
             }
-
-            if( !isGrounded && IsNearRightWall() )
+            else if( !isGrounded && IsNearRightWall() )
             {
                 _isWallRunning = true;
-                _directionOfWallRun = Vector3.Cross( Vector3.up , _hitRight.normal );
+                _directionOfWallRun = Vector3.Cross( Vector3.up , _hitRight.normal ).normalized;
             }
+            else
+                _isWallRunning = false;
+
             
             if( _hitLeft.collider != null && _hitRight.collider != null )
-                return _directionOfWallRun = _hitLeft.distance > _hitRight.distance ? Vector3.Cross( _hitRight.normal , Vector3.up ).normalized : Vector3.Cross( _hitLeft.normal , Vector3.up ).normalized;
+                _directionOfWallRun = _hitLeft.distance > _hitRight.distance ? Vector3.Cross( _hitRight.normal , Vector3.up ).normalized : Vector3.Cross( _hitLeft.normal , Vector3.up ).normalized;
             else if(isGrounded)
                 _isWallRunning = false;
 
-
-            return _directionOfWallRun.normalized;
+            return new Vector3( _directionOfWallRun.x , _directionOfWallRun.y + wallRunStartAngle , _directionOfWallRun.z );
 
         }
 
 
-
-        private struct WallRunData
-        {
-            public readonly Vector3 initialVelocity;
-            public readonly float timeToTarget;
-
-            public WallRunData( Vector3 initialVelocity , float timeToTarget )
-            {
-                this.initialVelocity = initialVelocity;
-                this.timeToTarget = timeToTarget;
-            }
-        }
 
 
 
@@ -327,7 +316,7 @@ namespace Movement
             Gizmos.DrawRay( transform.position + Vector3.up * -0.25f , -transform.right * transform.localScale.x );
 
             Gizmos.color = Color.green;
-            Gizmos.DrawRay( transform.position , new Vector3(_directionOfWallRun.x , _directionOfWallRun.y + wallrunHight , _directionOfWallRun.z  ) * 2f );
+            Gizmos.DrawRay( transform.position , new Vector3(_directionOfWallRun.x , _directionOfWallRun.y , _directionOfWallRun.z  ) * 2f );
 
 
         }

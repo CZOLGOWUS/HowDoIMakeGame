@@ -890,8 +890,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1709538785}
   m_LocalRotation: {x: -0, y: -0.28584832, z: -0, w: 0.95827496}
-  m_LocalPosition: {x: 13.99, y: 3.08, z: 14.6}
-  m_LocalScale: {x: 4.522251, y: 4.522251, z: 20.079699}
+  m_LocalPosition: {x: 13.99, y: 5.13, z: 14.6}
+  m_LocalScale: {x: 4.522251, y: 9.26971, z: 20.079699}
   m_Children:
   - {fileID: 599780939}
   m_Father: {fileID: 1240288443}
@@ -1071,22 +1071,23 @@ MonoBehaviour:
   layerMaskGround:
     serializedVersion: 2
     m_Bits: 256
+  camera: {fileID: 963194227}
   moveSpeed: 500
   smoothTimeGrounded: 0.1
   maxMoveSpeed: 10
   sphereCheckPosition: -0.51
   jumpGravity: -0.4
-  jumpHeight: 8000
+  jumpHeight: 5000
   smoothTimeAirborn: 0.8
   fallingStartVelocity: 6
   fowardJumpFroce: 5
   wallMask:
     serializedVersion: 2
     m_Bits: 512
-  scaleMultiplayer: -1
-  wallrunHight: 0
-  wallrunLenght: 0
-  wallRunSpeed: 2
+  wallRunSpeed: 9
+  wallRunStartAngle: 0.15
+  wallrunFallingAngleChange: 0.2
+  wallRunTimeToStartFalling: 4
 --- !u!114 &1844445332
 MonoBehaviour:
   m_ObjectHideFlags: 0
