@@ -53,6 +53,10 @@ namespace Movement
 
         private bool _isSpacePressed = false;
         private bool _isGrounded;
+        [Space]
+
+        [Header("WallRunJumping")]
+        
 
 
         [Space]
@@ -85,10 +89,6 @@ namespace Movement
 
 
 
-
-
-
-
         // Start is called before the first frame update
         void Start()
         {
@@ -101,7 +101,6 @@ namespace Movement
         private void FixedUpdate()
         {
             _isGrounded = IsGrounded();
-
 
             PlayerMove( _isGrounded , _myRigidBody.velocity );
             PlayerJump();
@@ -203,7 +202,9 @@ namespace Movement
 
         private void PlayerJump()
         {
+
             Vector3 velocity = _myRigidBody.velocity;
+
 
             if( _isSpacePressed && _isGrounded )
             {
@@ -213,10 +214,13 @@ namespace Movement
                 if( _inputDirection.z > 0f )
                     _myRigidBody.AddForce( transform.forward * fowardJumpFroce , ForceMode.Impulse );
             }
-            else
+            else if(!_isPlayerWallRuning)
             {
                 _myRigidBody.AddForce( Vector3.up * -9.81f , ForceMode.Force );
+                
             }
+
+
             if( velocity.y < fallingStartVelocity && !_isSpacePressed )
                 _myRigidBody.velocity += Vector3.up * jumpGravity;
 
@@ -229,7 +233,6 @@ namespace Movement
 
             if( CanStartWallRuning() )
             {
-                _isPlayerWallRuning = true;
 
 
                 //isPlayerWallRuning = !IsPlayerWallRunJumping();
@@ -239,12 +242,7 @@ namespace Movement
                     _wallRunTime += Time.deltaTime;
                     RaycastHit hitWall = GetWallToWallRun( _hitRight , _hitLeft );  // <- chosese betwen hitLeft/HitRight
 
-                    if( IsPlayerWallRunJumping() )
-                    {
-                        PlayerWallRunJump();
-                        return;
-                    }
-                        WallRun( hitWall );
+                    WallRun( hitWall );
                 }
 
             } 
@@ -260,37 +258,6 @@ namespace Movement
         private bool IsPlayerWallRunJumping()
         {
             return _isSpacePressed;
-        }
-
-
-
-        private void PlayerWallRunJump()
-        {
-
-            if( _inputDirection.z > 0 )
-            {
-                _isPlayerWallRuning = false;
-                //_directionOfWallRun = new Vector3( cameraTransform.forward.x , cameraTransform.forward.y + 0.5f , cameraTransform.forward.z );
-                _myRigidBody.AddForce( new Vector3( cameraTransform.forward.x, cameraTransform.forward.y + 0.5f , cameraTransform.forward.z) * fowardJumpFroce * 999f );
-            }
-            else
-            if(_inputDirection.x > 0)
-            {
-
-                _isPlayerWallRuning = false;
-
-                //_directionOfWallRun = new Vector3( cameraTransform.right.x , cameraTransform.right.y + 0.5f , cameraTransform.right.z );
-                _myRigidBody.AddForce( new Vector3(cameraTransform.right.x, cameraTransform.right.y+0.5f , cameraTransform.right.z ) * fowardJumpFroce * 999f );
-            }
-            else if( _inputDirection.x < 0 )
-            {
-
-                _isPlayerWallRuning = false;
-
-                //_directionOfWallRun = new Vector3( -cameraTransform.right.x , cameraTransform.right.y + 0.5f , -cameraTransform.right.z );
-                _myRigidBody.AddForce( new Vector3( -cameraTransform.right.x , cameraTransform.right.y + 0.5f , -cameraTransform.right.z ) * fowardJumpFroce * 999f );
-            }
-
         }
 
 
@@ -312,7 +279,8 @@ namespace Movement
                     _myRigidBody.velocity = _directionOfWallRun * wallRunSpeed;
                 else
                 {
-                    _myRigidBody.velocity = new Vector3( _myRigidBody.velocity.x , -5f , _myRigidBody.velocity.z );
+                    _myRigidBody.velocity = new Vector3( Mathf.Lerp(_myRigidBody.velocity.x , 0 , 0.1f) , _myRigidBody.velocity.y , Mathf.Lerp( _myRigidBody.velocity.z , 0 , 0.1f )  );
+                    
                 }
 
                 //stick to wall
@@ -330,8 +298,9 @@ namespace Movement
 
 
 
-        bool CanStartWallRuning()
+        private bool CanStartWallRuning()
         {
+
             if( !_isGrounded && isNearWall( ref _hitRight , ref _hitLeft ) /*&& Mathf.Sqrt(_myRigidBody.velocity.x * _myRigidBody.velocity.x + _myRigidBody.velocity.z * _myRigidBody.velocity.z ) > moveSpeed/3 && Mathf.Abs(_myRigidBody.velocity.y)  < 300f*/ )
             {
                 return _isPlayerWallRuning = true;
