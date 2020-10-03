@@ -72,10 +72,7 @@ namespace Movement
         public int wallRunTimeToStartFalling;
         public float wallRunTimeLength;
 
-        //private float _timeToJumpOfWall;
-        //private float _wallRunJumpingTimer;
-        //private bool _isWallRunJumpReady = true;
-        //private bool _wasPlayerWallRuning = false;
+
 
         private float _wallRunTime = 0f;
         private bool _isPlayerWallRuning = false;
@@ -85,8 +82,11 @@ namespace Movement
         private Vector3 _directionOfWallRun;
 
 
-        //private Vector3 _smoothInputMagnitudeWhileAirborn = Vector3.zero;
 
+        private bool _didPlayerWallRunJump = false;
+        private float _timeSinceWallJump;
+        private float _timeToEnableNextWallRunJump = 0.2f;
+        private bool _isAbleToWallJump = true;
 
 
         // Start is called before the first frame update
@@ -101,6 +101,7 @@ namespace Movement
         private void FixedUpdate()
         {
             _isGrounded = IsGrounded();
+
 
             PlayerMove( _isGrounded , _myRigidBody.velocity );
             PlayerJump();
@@ -128,65 +129,76 @@ namespace Movement
 
         private void PlayerMove( bool isGrounded , Vector3 velocity )
         {
-            float _smoothTime;
+            if( isGrounded)
+            {
+                float _smoothTime;
 
 
-            #region commented addForce Method
-            /*
-            if( Mathf.Abs(velocity.x) > maxMoveSpeed ) velocity.x = Mathf.Clamp(velocity.x,-maxMoveSpeed,maxMoveSpeed);
-            if(Mathf.Abs(velocity.z) > maxMoveSpeed ) velocity.z = Mathf.Clamp(velocity.z,-maxMoveSpeed,maxMoveSpeed);
-            _myRigidBody.velocity = velocity;
+                #region commented addForce Method
+                /*
+                if( Mathf.Abs(velocity.x) > maxMoveSpeed ) velocity.x = Mathf.Clamp(velocity.x,-maxMoveSpeed,maxMoveSpeed);
+                if(Mathf.Abs(velocity.z) > maxMoveSpeed ) velocity.z = Mathf.Clamp(velocity.z,-maxMoveSpeed,maxMoveSpeed);
+                _myRigidBody.velocity = velocity;
 
-            _myRigidBody.AddForce( transform.forward * _inputDirection.z * moveSpeed * Time.deltaTime );
-            _myRigidBody.AddForce( transform.right * _inputDirection.x * moveSpeed * Time.deltaTime );
-            */
-            #endregion
+                _myRigidBody.AddForce( transform.forward * _inputDirection.z * moveSpeed * Time.deltaTime );
+                _myRigidBody.AddForce( transform.right * _inputDirection.x * moveSpeed * Time.deltaTime );
+                */
+                #endregion
 
-            //the one im using
-            #region velocity change method
+                //the one im using
+                #region velocity change method
 
 
-            if( isGrounded )
-                _smoothTime = smoothTimeGrounded;
+                if( isGrounded )
+                    _smoothTime = smoothTimeGrounded;
+                else
+                    _smoothTime = smoothTimeAirborn;
+
+
+                _smoothInputMagnitude = new Vector3(
+                    Mathf.SmoothDamp( _smoothInputMagnitude.x , _inputDirection.x , ref _currentVelocityX , _smoothTime ) ,
+                    0f ,//doesnt matter
+                    Mathf.SmoothDamp( _smoothInputMagnitude.z , _inputDirection.z , ref _currentVelocityZ , _smoothTime )
+                );
+
+
+                _myRigidBody.velocity =
+                moveSpeed * Time.fixedDeltaTime *
+                (transform.forward * _smoothInputMagnitude.z + transform.right * _smoothInputMagnitude.x) +
+                Vector3.up * _myRigidBody.velocity.y;
+
+
+                #endregion
+
+                #region test
+                /*
+                _myRigidBody.velocity = new Vector3
+                    (
+                    Mathf.Clamp( _myRigidBody.velocity.x , -maxVelocity , maxVelocity ) ,
+                    _myRigidBody.velocity.y ,
+                    Mathf.Clamp( _myRigidBody.velocity.z , -maxVelocity , maxVelocity )
+                    );
+
+
+                if( _inputDirection.magnitude > 0f )
+                    _inputDirectionLastPressed = _inputDirection;
+
+                _myRigidBody.AddForce( new Vector3 (
+                    Mathf.Clamp(moveSpeed * Time.deltaTime * _inputDirection.x ),
+                    0f,
+                    moveSpeed * Time.deltaTime * _inputDirection.z
+                    );
+                */
+
+                #endregion
+            }
             else
-                _smoothTime = smoothTimeAirborn;
-
-
-            _smoothInputMagnitude = new Vector3(
-                Mathf.SmoothDamp( _smoothInputMagnitude.x , _inputDirection.x , ref _currentVelocityX , _smoothTime ) ,
-                0f ,//doesnt matter
-                Mathf.SmoothDamp( _smoothInputMagnitude.z , _inputDirection.z , ref _currentVelocityZ , _smoothTime )
-            );
-
-            _myRigidBody.velocity =
-            moveSpeed * Time.fixedDeltaTime *
-            (transform.forward * _smoothInputMagnitude.z + transform.right * _smoothInputMagnitude.x) +
-            Vector3.up * _myRigidBody.velocity.y;
-
-
-            #endregion
-
-            #region test
-            /*
-            _myRigidBody.velocity = new Vector3
-                (
-                Mathf.Clamp( _myRigidBody.velocity.x , -maxVelocity , maxVelocity ) ,
-                _myRigidBody.velocity.y ,
-                Mathf.Clamp( _myRigidBody.velocity.z , -maxVelocity , maxVelocity )
-                );
-
-
-            if( _inputDirection.magnitude > 0f )
-                _inputDirectionLastPressed = _inputDirection;
-
-            _myRigidBody.AddForce( new Vector3 (
-                Mathf.Clamp(moveSpeed * Time.deltaTime * _inputDirection.x ),
-                0f,
-                moveSpeed * Time.deltaTime * _inputDirection.z
-                );
-            */
-
-            #endregion
+            {
+                _myRigidBody.velocity +=
+                moveSpeed * 0.05f * Time.fixedDeltaTime *
+                (transform.forward * _inputDirection.normalized.z + transform.right * _inputDirection.normalized.x);
+               
+            }
 
         }
 
@@ -203,8 +215,7 @@ namespace Movement
         private void PlayerJump()
         {
 
-            Vector3 velocity = _myRigidBody.velocity;
-
+            
 
             if( _isSpacePressed && _isGrounded )
             {
@@ -221,7 +232,7 @@ namespace Movement
             }
 
 
-            if( velocity.y < fallingStartVelocity && !_isSpacePressed )
+            if( _myRigidBody.velocity.y < fallingStartVelocity && !_isSpacePressed )
                 _myRigidBody.velocity += Vector3.up * jumpGravity;
 
         }
@@ -230,34 +241,64 @@ namespace Movement
 
         void PlayerWallRun()
         {
+            _timeSinceWallJump += Time.deltaTime;
+
 
             if( CanStartWallRuning() )
             {
 
+                
+                
+                    if( _timeSinceWallJump > _timeToEnableNextWallRunJump )
+                        if( _isSpacePressed )
+                        {
+                        
+                                _timeSinceWallJump = 0f;
 
-                //isPlayerWallRuning = !IsPlayerWallRunJumping();
+                                
+                            #region directional walljumping
+                            
+                            if( _inputDirection.x > 0 )
+                                {
+                                    Vector3 walljumpvector = (transform.forward + transform.right);
+                                    walljumpvector.y += 0.5f;
+                                    _myRigidBody.velocity = ( walljumpvector.normalized * 9f );
+                                }
+                                else if( _inputDirection.x < 0 )
+                                {
+                                    Vector3 walljumpvector = (transform.forward - transform.right);
+                                    walljumpvector.y += 0.5f;
+                                    _myRigidBody.velocity = ( walljumpvector.normalized * 9f );
+                                }
+                            
+                            #endregion
 
-                if( _isPlayerWallRuning )
-                {
-                    _wallRunTime += Time.deltaTime;
-                    RaycastHit hitWall = GetWallToWallRun( _hitRight , _hitLeft );  // <- chosese betwen hitLeft/HitRight
 
-                    WallRun( hitWall );
-                }
+
+
+
+                            return;
+
+                        }else
+                        {
+                            print( "iswalruning" );
+                            _wallRunTime += Time.deltaTime;
+                            RaycastHit hitWall = GetWallToWallRun( _hitRight , _hitLeft );  // <- chosese betwen hitLeft/HitRight
+                            WallRun( hitWall );
+
+                            return;
+                        }
+
+
+                
 
             } 
             else
             {
+
                 _wallRunTime = 0f;
             }
 
-        }
-
-
-
-        private bool IsPlayerWallRunJumping()
-        {
-            return _isSpacePressed;
         }
 
 
@@ -301,7 +342,7 @@ namespace Movement
         private bool CanStartWallRuning()
         {
 
-            if( !_isGrounded && isNearWall( ref _hitRight , ref _hitLeft ) /*&& Mathf.Sqrt(_myRigidBody.velocity.x * _myRigidBody.velocity.x + _myRigidBody.velocity.z * _myRigidBody.velocity.z ) > moveSpeed/3 && Mathf.Abs(_myRigidBody.velocity.y)  < 300f*/ )
+            if( !_isGrounded && !_didPlayerWallRunJump && IsNearWall( ref _hitRight , ref _hitLeft ) /*&& Mathf.Sqrt(_myRigidBody.velocity.x * _myRigidBody.velocity.x + _myRigidBody.velocity.z * _myRigidBody.velocity.z ) > moveSpeed/3 && Mathf.Abs(_myRigidBody.velocity.y)  < 300f*/ )
             {
                 return _isPlayerWallRuning = true;
             }
@@ -310,11 +351,12 @@ namespace Movement
                 //_wallRunTime = 0f; // dzieki temu Player nie leci w dół po paru wallrunach , trza gdzie s indzie to dać
                 return _isPlayerWallRuning = false;
             }
+
         }
 
 
 
-        private bool isNearWall( ref RaycastHit hitRight , ref RaycastHit hitLeft )
+        private bool IsNearWall( ref RaycastHit hitRight , ref RaycastHit hitLeft )
         {
             return 
                 Physics.Raycast(
